@@ -282,10 +282,14 @@ class WindowChip(QPushButton):
         top.setContentsMargins(0, 0, 0, 0)
         top.setSpacing(10)
 
-        self.icon_label = QLabel()
+        self.icon_label = QLabel(material_icon("apps"))
         self.icon_label.setObjectName("chipIcon")
         self.icon_label.setFixedSize(22, 22)
-        self.icon_label.setPixmap(window_switcher_svg_icon(20, prefer_color=False))
+        initial_icon = window_switcher_svg_icon(20, prefer_color=False)
+        if not initial_icon.isNull():
+            self.icon_label.setPixmap(initial_icon)
+        else:
+            self.icon_label.setFont(QFont(self.material_font, 18))
 
         labels = QVBoxLayout()
         labels.setContentsMargins(0, 0, 0, 0)
@@ -352,7 +356,14 @@ class WindowChip(QPushButton):
             meta = theme.text_muted
             keycap_bg = theme.app_running_bg
             keycap_border = theme.app_running_border
-        self.icon_label.setPixmap(window_switcher_svg_icon(20, prefer_color=active))
+        icon_pixmap = window_switcher_svg_icon(20, prefer_color=active)
+        if not icon_pixmap.isNull():
+            self.icon_label.setPixmap(icon_pixmap)
+            self.icon_label.setText("")
+        else:
+            self.icon_label.setPixmap(QPixmap())
+            self.icon_label.setText(material_icon("apps"))
+            self.icon_label.setFont(QFont(self.material_font, 18))
         self.setStyleSheet(
             f"""
             QPushButton#windowChip {{
