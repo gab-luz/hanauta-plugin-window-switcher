@@ -39,7 +39,6 @@ if str(APP_DIR) not in sys.path:
     sys.path.append(str(APP_DIR))
 
 from pyqt.shared.theme import load_theme_palette, palette_mtime, rgba
-from pyqt.shared.button_helpers import create_close_button
 
 IGNORED_CLASSES = {
     "CyberBar",
@@ -102,6 +101,15 @@ def window_switcher_svg_icon(size: int = 20, *, prefer_color: bool = False) -> Q
         if not pixmap.isNull():
             return pixmap
     return QPixmap()
+
+
+def window_switcher_close_icon(size: int = 18) -> QIcon:
+    close_svg = PLUGIN_ASSETS / "close.svg"
+    if close_svg.exists():
+        icon = QIcon(str(close_svg))
+        if not icon.isNull():
+            return icon
+    return QIcon()
 
 
 def primary_screen() -> object | None:
@@ -498,12 +506,17 @@ class WindowSwitcher(QWidget):
         titles.addWidget(subtitle)
         header.addLayout(titles, 1)
 
-        close_button = create_close_button(
-            material_icon("close"),
-            self.material_font,
-            font_size=20,
-            object_name="closeButton",
-        )
+        close_button = QPushButton("")
+        close_button.setObjectName("closeButton")
+        close_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        close_button.setFixedSize(36, 36)
+        close_icon = window_switcher_close_icon(18)
+        if not close_icon.isNull():
+            close_button.setIcon(close_icon)
+            close_button.setIconSize(close_button.size() * 0.5)
+        else:
+            close_button.setText(material_icon("close"))
+            close_button.setFont(QFont(self.material_font, 20))
         close_button.clicked.connect(self.close)
         header.addWidget(close_button, 0, Qt.AlignmentFlag.AlignTop)
         layout.addLayout(header)
