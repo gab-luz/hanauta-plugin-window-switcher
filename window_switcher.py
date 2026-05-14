@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from PyQt6.QtCore import QEasingCurve, QPropertyAnimation, Qt, QTimer
-from PyQt6.QtGui import QColor, QCursor, QFont, QFontDatabase, QGuiApplication, QIcon, QKeyEvent
+from PyQt6.QtGui import QColor, QCursor, QFont, QFontDatabase, QGuiApplication, QIcon, QKeyEvent, QPixmap
 from PyQt6.QtWidgets import (
     QApplication,
     QFrame,
@@ -32,6 +32,8 @@ from PyQt6.QtWidgets import (
 ROOT = Path(__file__).resolve().parents[4]
 APP_DIR = Path(__file__).resolve().parents[2]
 FONTS_DIR = ROOT / "assets" / "fonts"
+PLUGIN_DIR = Path(__file__).resolve().parent
+PLUGIN_ASSETS = PLUGIN_DIR / "assets"
 
 if str(APP_DIR) not in sys.path:
     sys.path.append(str(APP_DIR))
@@ -84,6 +86,22 @@ def detect_font(*families: str) -> str:
 
 def material_icon(name: str) -> str:
     return MATERIAL_ICONS.get(name, "?")
+
+
+def window_switcher_svg_icon(size: int = 20, *, prefer_color: bool = False) -> QPixmap:
+    candidates: list[Path] = []
+    if prefer_color:
+        candidates.append(PLUGIN_ASSETS / "icon_color.svg")
+    candidates.append(PLUGIN_ASSETS / "icon.svg")
+    if not prefer_color:
+        candidates.append(PLUGIN_ASSETS / "icon_color.svg")
+    for path in candidates:
+        if not path.exists():
+            continue
+        pixmap = QIcon(str(path)).pixmap(size, size)
+        if not pixmap.isNull():
+            return pixmap
+    return QPixmap()
 
 
 def primary_screen() -> object | None:
@@ -264,9 +282,10 @@ class WindowChip(QPushButton):
         top.setContentsMargins(0, 0, 0, 0)
         top.setSpacing(10)
 
-        self.icon_label = QLabel(material_icon("apps"))
+        self.icon_label = QLabel()
         self.icon_label.setObjectName("chipIcon")
-        self.icon_label.setFont(QFont(self.material_font, 18))
+        self.icon_label.setFixedSize(22, 22)
+        self.icon_label.setPixmap(window_switcher_svg_icon(20, prefer_color=False))
 
         labels = QVBoxLayout()
         labels.setContentsMargins(0, 0, 0, 0)
@@ -324,7 +343,6 @@ class WindowChip(QPushButton):
             border = rgba(theme.primary, 0.72)
             title = theme.on_primary_container
             meta = rgba(theme.on_primary_container, 0.82)
-            icon = theme.on_primary_container
             keycap_bg = rgba(theme.on_primary_container, 0.10)
             keycap_border = rgba(theme.on_primary_container, 0.22)
         else:
@@ -332,9 +350,9 @@ class WindowChip(QPushButton):
             border = theme.chip_border
             title = theme.text
             meta = theme.text_muted
-            icon = theme.primary
             keycap_bg = theme.app_running_bg
             keycap_border = theme.app_running_border
+        self.icon_label.setPixmap(window_switcher_svg_icon(20, prefer_color=active))
         self.setStyleSheet(
             f"""
             QPushButton#windowChip {{
@@ -346,10 +364,6 @@ class WindowChip(QPushButton):
             QPushButton#windowChip:hover {{
                 background: {theme.hover_bg};
                 border: 1px solid {theme.app_focused_border};
-            }}
-            QLabel#chipIcon {{
-                color: {icon};
-                font-family: "{self.material_font}";
             }}
             QLabel#chipClass {{
                 color: {meta};
